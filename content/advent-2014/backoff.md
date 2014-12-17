@@ -48,7 +48,7 @@ I've found this approach to be limiting for a few reasons:
 It turns control of my function over to the backoff package, making it
 more difficult to reason about program flow.
 
-It doesn't allow you to reset a backoff processs mid-try if you get a
+It doesn't allow you to reset a backoff process mid-try if you get a
 signal that you can retry from zero.
 
 It doesn't allow you to easily change behavior between fatal and
@@ -120,6 +120,11 @@ func retryConn() {
 }
 ```
 
+You can find real life usage in [this pumpWrites
+function](https://github.com/spacemonkeygo/monitor/blob/c18860ccb55edc52e761551989e78a605ff58bb2/trace/scribe.go#L66),
+which maintains a persistent connection to a Scribe server for writing
+call trace data.
+
 This has several advantages:
 
 The calling function has complete control over program flow. It can
@@ -174,8 +179,11 @@ loop:
 The backoff policy itself is data only and holds no backoff state,
 allowing safe concurrent use with no need for allocations.
 
-The state of the connection itself is held entirely in the retryConn
-function, making it easier to reason about its behavior.
+All state, including the connection itself and the attempt counter, is
+held entirely in the retryConn function. You can reason about the
+state of the connection without looking anywhere else. The attempt
+counter is simply an integer, not a property hidden behind an opaque
+struct.
 
 If a fatal error occurs when dealing with `conn`, you can easily
 return that from retryConn without disrupting another process.
@@ -183,3 +191,22 @@ return that from retryConn without disrupting another process.
 Most important, and this is a thing I love about programming in Go, is
 that the function *looks like what it does*. There's no hidden state
 or magic behavior.
+
+I've always found this array-based backoff sufficient, but if you want
+to calculate the delays, you can elevate `Duration()` into an
+interface and implement that however you'd like:
+
+```
+type Backoff interface {
+     Duration(n int) time.Duration
+}
+
+type RandomBackoff struct {}
+
+func (b RandomBackoff) Duration(n int) time.Duration {
+     // This is a terrible idea.
+     return time.Duration(rand.Int63())
+}
+```
+
+And always remember to seed your random number generator!
