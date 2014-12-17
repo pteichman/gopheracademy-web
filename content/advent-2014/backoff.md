@@ -17,7 +17,7 @@ randomize those times in order to avoid the
 There are several libraries for Go that implement backoff with delay,
 and their APIs are similar to this:
 
-```
+```go
 type Backoff struct {
      attempt int
      ...
@@ -59,7 +59,7 @@ to reasoning about program flow.
 
 I've used the below as an alternative in a couple of projects now:
 
-```
+```go
 package backoff
 
 import "time"
@@ -99,7 +99,7 @@ func jitter(millis int) int {
 
 With typical use looking like this:
 
-```
+```go
 func retryConn() {
      var attempt int
 
@@ -133,7 +133,7 @@ and select if other signals are in play.
 
 So if you have a "done" channel to signal that retries should stop:
 
-```
+```go
 func retryConn(done <-chan struct{}) {
      var attempt int
 
@@ -155,7 +155,7 @@ It allows you to reset the backoff counter in the middle of a retry if
 you have an out-of-band reset signal (e.g. ZooKeeper notifying you the
 server is back up):
 
-```
+```go
 func retryConn(reset, done <-chan struct{}) {
      var attempt int
 
@@ -196,7 +196,7 @@ I've always found this array-based backoff sufficient, but if you want
 to calculate the delays, you can elevate `Duration()` into an
 interface and implement that however you'd like:
 
-```
+```go
 type Backoff interface {
      Duration(n int) time.Duration
 }
