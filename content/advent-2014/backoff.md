@@ -204,7 +204,7 @@ type Backoff interface {
 type RandomBackoff struct {}
 
 func (b RandomBackoff) Duration(n int) time.Duration {
-     // This is a terrible idea.
+     // This is a terrible idea: backoff between 0 ns and 290 years.
      return time.Duration(rand.Int63())
 }
 ```
