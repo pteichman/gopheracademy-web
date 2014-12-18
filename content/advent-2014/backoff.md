@@ -1,6 +1,6 @@
 +++
 author = ["Peter Teichman"]
-date = "2014-12-17T19:30:00+00:00"
+date = "2014-12-18T19:30:00+00:00"
 title = "Simple backoff"
 series = ["Advent 2014"]
 +++
