@@ -70,7 +70,7 @@ to reasoning about program flow.
 Improvement
 ===========
 
-I've used the below as an alternative in a couple of projects now:
+I've used the following as an alternative in a couple of projects:
 
 ```go
 package backoff
@@ -202,10 +202,13 @@ If a fatal error occurs when dealing with `conn`, you can easily
 return that from retryConn without disrupting another process. You can
 decide whether an error is fatal without involving the backoff policy.
 
+At ~30 lines of code, it can be easily copied into any project without
+introducing an external dependency.
+
 Most important, and this is a thing I love about programming in Go, is
 that the function *looks like what it does*. There's no hidden state
-or magic behavior. The normal function flow lives at two levels of
-indentation, not as nice as one but understandable given the for loop.
+or magic behavior. The normal function flow lives at a reasonable two
+levels of indentation.
 
 I've always found this array-based backoff sufficient, but if you want
 to calculate the delays, you can elevate `Duration()` into an
