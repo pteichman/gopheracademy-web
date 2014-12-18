@@ -12,8 +12,8 @@ maintain a persistent connection to a server. When that server goes
 down (as it will), you'll need to reconnect.
 
 A reconnect loop needs two things: repeated unsuccessful attempts
-should increase the time you wait before the next attempt, and your
-wait times should be randomized to avoid the [thundering herd
+should increase the wait time between attempts; and your wait
+times should be randomized to avoid the [thundering herd
 problem](http://en.wikipedia.org/wiki/Thundering_herd_problem).
 
 ## The stateful start.
@@ -51,9 +51,9 @@ func (b *Backoff) Reset() {
 
 I did this at first too, and I found the approach to be limiting:
 
-It turns control of my function over to the backoff package, making it
-more difficult to reason about program flow since you don't know for
-sure when it might be called.
+It turns control of your function over to the backoff package, making
+it more difficult to reason about program flow since you don't know
+for sure when it might be called.
 
 It doesn't allow you to restart a backoff process mid-try if you get a
 signal that you can retry from zero. This can be added by passing in a
