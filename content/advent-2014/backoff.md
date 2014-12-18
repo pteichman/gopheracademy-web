@@ -5,6 +5,8 @@ title = "Simple backoff"
 series = ["Advent 2014"]
 +++
 
+
+
 There comes a time in the life of many programs when you need to
 maintain a persistent connection to a server. When that server goes
 down (as it will), you'll need to reconnect.
@@ -14,7 +16,8 @@ time you're waiting between attempts, and you should slightly
 randomize those times in order to avoid the
 [thundering herd problem](http://en.wikipedia.org/wiki/Thundering_herd_problem).
 
-
+First Pass
+==========
 
 There are several libraries for Go that implement backoff with delay,
 and their APIs are similar to this:
@@ -63,6 +66,9 @@ muddies the boundaries between your code and the backoff package.
 
 Any outside state must be updated in the body of `f()`, another blow
 to reasoning about program flow.
+
+Improvement
+===========
 
 I've used the below as an alternative in a couple of projects now:
 
@@ -184,7 +190,7 @@ loop:
 ```
 
 The backoff policy itself is data only and holds no backoff state,
-allowing safe concurrent use with no need for allocations.
+allowing safe concurrent use and no need for allocations.
 
 All state, including the connection itself and the attempt counter, is
 held entirely in the retryConn function. You can reason about the
@@ -193,11 +199,13 @@ counter is simply an integer, not a property hidden behind an opaque
 struct. It has a zero value that makes sense.
 
 If a fatal error occurs when dealing with `conn`, you can easily
-return that from retryConn without disrupting another process.
+return that from retryConn without disrupting another process. You can
+decide whether an error is fatal without involving the backoff policy.
 
 Most important, and this is a thing I love about programming in Go, is
 that the function *looks like what it does*. There's no hidden state
-or magic behavior.
+or magic behavior. The normal function flow lives at two levels of
+indentation, not as nice as one but understandable given the for loop.
 
 I've always found this array-based backoff sufficient, but if you want
 to calculate the delays, you can elevate `Duration()` into an
