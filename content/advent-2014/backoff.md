@@ -18,6 +18,8 @@ There are several libraries for Go that implement backoff with delay,
 and their APIs are similar to this:
 
 ```go
+package backoff
+
 type Backoff struct {
      attempt int
      ...
@@ -43,7 +45,8 @@ func (b *Backoff) Reset() {
 }
 ```
 
-I've found this approach to be limiting for a few reasons:
+I did this at first too, and I found the approach to be limiting for a
+few reasons:
 
 It turns control of my function over to the backoff package, making it
 more difficult to reason about program flow.
@@ -52,7 +55,9 @@ It doesn't allow you to reset a backoff process mid-try if you get a
 signal that you can retry from zero.
 
 It doesn't allow you to easily change behavior between fatal and
-retryable errors in `f()`.
+retryable errors in `f()`. You could add a backoff package error
+wrapper for these, but then `f()` needs to be aware of them. That
+muddies the boundaries between your code and the backoff package.
 
 Any outside state must be updated in the body of `f()`, another blow
 to reasoning about program flow.
@@ -64,36 +69,36 @@ package backoff
 
 import "time"
 
-// BackoffPolicy implements backoff policy,  randomizing its delays and
-// saturating at its last value.
+// BackoffPolicy implements a backoff policy, randomizing its delays
+// and saturating at the final value in Millis.
 type BackoffPolicy struct {
-	Millis []int
+    Millis []int
 }
 
-// defaultBackoff is a backoff policy ranging up to 5s.
+// Default is a backoff policy ranging up to 5 seconds.
 var Default = BackoffPolicy{
-	[]int{0, 10, 10, 100, 100, 500, 500, 3000, 3000, 5000},
+    []int{0, 10, 10, 100, 100, 500, 500, 3000, 3000, 5000},
 }
 
-// duration returns the time duration of the n'th wait cycle in its
-// backoff policy. This is backoff.millis[n], randomized to avoid
-// thundering herds.
+// Duration returns the time duration of the n'th wait cycle in a
+// backoff policy. This is b.Millis[n], randomized to avoid thundering
+// herds.
 func (b BackoffPolicy) Duration(n int) time.Duration {
-	if n >= len(b.Millis) {
-		n = len(b.Millis) - 1
-	}
+    if n >= len(b.Millis) {
+        n = len(b.Millis) - 1
+    }
 
-	return time.Duration(jitter(b.Millis[n])) * time.Millisecond
+    return time.Duration(jitter(b.Millis[n])) * time.Millisecond
 }
 
 // jitter returns a random integer uniformly distributed in the range
 // [0.5 * millis .. 1.5 * millis]
 func jitter(millis int) int {
-	if millis == 0 {
-		return 0
-	}
+    if millis == 0 {
+        return 0
+    }
 
-	return millis/2 + rand.Intn(millis)
+    return millis/2 + rand.Intn(millis)
 }
 ```
 
@@ -183,7 +188,7 @@ All state, including the connection itself and the attempt counter, is
 held entirely in the retryConn function. You can reason about the
 state of the connection without looking anywhere else. The attempt
 counter is simply an integer, not a property hidden behind an opaque
-struct.
+struct. It has a zero value that makes sense.
 
 If a fatal error occurs when dealing with `conn`, you can easily
 return that from retryConn without disrupting another process.
