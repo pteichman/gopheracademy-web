@@ -14,6 +14,8 @@ time you're waiting between attempts, and you should slightly
 randomize those times in order to avoid the
 [thundering herd problem](http://en.wikipedia.org/wiki/Thundering_herd_problem).
 
+
+
 There are several libraries for Go that implement backoff with delay,
 and their APIs are similar to this:
 
@@ -21,27 +23,27 @@ and their APIs are similar to this:
 package backoff
 
 type Backoff struct {
-     attempt int
-     ...
+	attempt int
+        ...
 }
 
 func New() *Backoff {
-     ...
+	...
 }
 
 func (b *Backoff) Try(f func() error) {
-     // Perform some delay based on the current b.attempt, likely using time.Sleep().
+	// Perform some delay based on the current b.attempt, likely using time.Sleep().
 
-     if err := f(); err == nil {
-         // Reset the backoff counter on success.
-         b.Reset()
-     } else {
-         b.attempt++
-     }
+	if err := f(); err == nil {
+		// Reset the backoff counter on success.
+		b.Reset()
+	} else {
+		b.attempt++
+	}
 }
 
 func (b *Backoff) Reset() {
-     attempt = 0
+	attempt = 0
 }
 ```
 
@@ -72,33 +74,33 @@ import "time"
 // BackoffPolicy implements a backoff policy, randomizing its delays
 // and saturating at the final value in Millis.
 type BackoffPolicy struct {
-    Millis []int
+	Millis []int
 }
 
 // Default is a backoff policy ranging up to 5 seconds.
 var Default = BackoffPolicy{
-    []int{0, 10, 10, 100, 100, 500, 500, 3000, 3000, 5000},
+	[]int{0, 10, 10, 100, 100, 500, 500, 3000, 3000, 5000},
 }
 
 // Duration returns the time duration of the n'th wait cycle in a
 // backoff policy. This is b.Millis[n], randomized to avoid thundering
 // herds.
 func (b BackoffPolicy) Duration(n int) time.Duration {
-    if n >= len(b.Millis) {
-        n = len(b.Millis) - 1
-    }
+	if n >= len(b.Millis) {
+		n = len(b.Millis) - 1
+	}
 
-    return time.Duration(jitter(b.Millis[n])) * time.Millisecond
+	return time.Duration(jitter(b.Millis[n])) * time.Millisecond
 }
 
 // jitter returns a random integer uniformly distributed in the range
 // [0.5 * millis .. 1.5 * millis]
 func jitter(millis int) int {
-    if millis == 0 {
-        return 0
-    }
+	if millis == 0 {
+		return 0
+	}
 
-    return millis/2 + rand.Intn(millis)
+	return millis/2 + rand.Intn(millis)
 }
 ```
 
@@ -106,22 +108,22 @@ With typical use looking like this:
 
 ```go
 func retryConn() {
-     var attempt int
+	var attempt int
 
-     for {
-          time.Sleep(backoff.Default.Duration(attempt))
+	for {
+		time.Sleep(backoff.Default.Duration(attempt))
 
-          conn, err := makeConnection()
-          if err != nil {
-              // Maybe log the error.
-              attempt++
-              continue
-          }
+		conn, err := makeConnection()
+		if err != nil {
+			// Maybe log the error.
+			attempt++
+			continue
+		}
 
-          // Do your thing with conn; log any eventual errors.
+		// Do your thing with conn; log any eventual errors.
 
-          attempt = 0
-     }     
+		attempt = 0
+	}
 }
 ```
 
@@ -140,18 +142,18 @@ So if you have a "done" channel to signal that retries should stop:
 
 ```go
 func retryConn(done <-chan struct{}) {
-     var attempt int
+	var attempt int
 
-     for {
-         // Replace the time.Sleep above with this block.
-         select {
-         case <-done:
-              return
-         case <-time.After(backoff.Default.Duration(attempt)):
-         }
+	for {
+		// Replace the time.Sleep above with this block.
+		select {
+		case <-done:
+			return
+		case <-time.After(backoff.Default.Duration(attempt)):
+		}
 
-         [ ... ]
-     }
+		[ ... ]
+	}
 }
 
 ```
@@ -162,22 +164,22 @@ server is back up):
 
 ```go
 func retryConn(reset, done <-chan struct{}) {
-     var attempt int
+	var attempt int
 
 loop:
-     for {
-         // Replace the time.Sleep above with this block.
-         select {
-         case <-done:
-              return
-         case <-reset:
-              attempt = 0
-              continue loop         
-         case <-time.After(backoff.Default.Duration(attempt)):
-         }
+	for {
+		// Replace the time.Sleep above with this block.
+		select {
+		case <-done:
+			return
+		case <-reset:
+			attempt = 0
+			continue loop
+		case <-time.After(backoff.Default.Duration(attempt)):
+		}
 
-         [ ... ]
-     }
+		[ ... ]
+	}
 }
 ```
 
@@ -203,14 +205,14 @@ interface and implement that however you'd like:
 
 ```go
 type Backoff interface {
-     Duration(n int) time.Duration
+	Duration(n int) time.Duration
 }
 
 type RandomBackoff struct {}
 
 func (b RandomBackoff) Duration(n int) time.Duration {
-     // This is a terrible idea: backoff between 0 ns and 290 years.
-     return time.Duration(rand.Int63())
+	// This is a terrible idea: backoff between 0 ns and 290 years.
+	return time.Duration(rand.Int63())
 }
 ```
 
