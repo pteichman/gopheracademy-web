@@ -5,19 +5,18 @@ title = "Simple backoff"
 series = ["Advent 2014"]
 +++
 
-
+## Or, taming connection state and thundering herds.
 
 There comes a time in the life of many programs when you need to
 maintain a persistent connection to a server. When that server goes
 down (as it will), you'll need to reconnect.
 
-Reconnecting usually means two things: you should slowly increase the
-time you're waiting between attempts, and you should slightly
-randomize those times in order to avoid the
-[thundering herd problem](http://en.wikipedia.org/wiki/Thundering_herd_problem).
+A reconnect loop needs two things: repeated unsuccessful attempts
+should increase the time you wait before the next attempt, and your
+wait times should be randomized to avoid the [thundering herd
+problem](http://en.wikipedia.org/wiki/Thundering_herd_problem).
 
-First Pass
-==========
+## The stateful start.
 
 There are several libraries for Go that implement backoff with delay,
 and their APIs are similar to this:
@@ -50,14 +49,16 @@ func (b *Backoff) Reset() {
 }
 ```
 
-I did this at first too, and I found the approach to be limiting for a
-few reasons:
+I did this at first too, and I found the approach to be limiting:
 
 It turns control of my function over to the backoff package, making it
-more difficult to reason about program flow.
+more difficult to reason about program flow since you don't know for
+sure when it might be called.
 
-It doesn't allow you to reset a backoff process mid-try if you get a
-signal that you can retry from zero.
+It doesn't allow you to restart a backoff process mid-try if you get a
+signal that you can retry from zero. This can be added by passing in a
+retry channel, but it complicates the simplest case and offers little
+flexibility when a retry needs to occur.
 
 It doesn't allow you to easily change behavior between fatal and
 retryable errors in `f()`. You could add a backoff package error
@@ -67,8 +68,7 @@ muddies the boundaries between your code and the backoff package.
 Any outside state must be updated in the body of `f()`, another blow
 to reasoning about program flow.
 
-Improvement
-===========
+## A stateless alternative.
 
 I've used the following as an alternative in a couple of projects:
 
@@ -133,7 +133,7 @@ func retryConn() {
 }
 ```
 
-You can find real life usage in [this pumpWrites
+You can find real world usage in [this pumpWrites
 function](https://github.com/spacemonkeygo/monitor/blob/c18860ccb55edc52e761551989e78a605ff58bb2/trace/scribe.go#L66),
 which maintains a persistent connection to a Scribe server for writing
 call trace data.
@@ -190,7 +190,8 @@ loop:
 ```
 
 The backoff policy itself is data only and holds no backoff state,
-allowing safe concurrent use and no need for allocations.
+allowing safe concurrent use and no need for allocations when many
+processes are backing off at the same time.
 
 All state, including the connection itself and the attempt counter, is
 held entirely in the retryConn function. You can reason about the
