@@ -11,9 +11,9 @@ There comes a time in the life of many programs when you need to
 maintain a persistent connection to a server. When that server goes
 down (as it will), you'll need to reconnect.
 
-A reconnect loop needs two things: repeated unsuccessful attempts
-should increase the wait time between attempts; and your wait
-times should be randomized to avoid the [thundering herd
+A reconnect loop needs two things: it increases the wait time between
+attempts after repeated failures (i.e. backoff); and randomizes wait
+times to avoid the [thundering herd
 problem](http://en.wikipedia.org/wiki/Thundering_herd_problem).
 
 ## The stateful start.
