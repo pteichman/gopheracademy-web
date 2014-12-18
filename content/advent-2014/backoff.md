@@ -11,9 +11,9 @@ There comes a time in the life of many programs when you need to
 maintain a persistent connection to a server. When that server goes
 down (as it will), you'll need to reconnect.
 
-A reconnect loop needs two things: it increases the wait time between
-attempts after repeated failures (i.e. backoff); and randomizes wait
-times to avoid the [thundering herd
+A reconnect loop needs to do two things: it increases the wait time
+between attempts after repeated failures (i.e. backoff); and
+randomizes wait times to avoid the [thundering herd
 problem](http://en.wikipedia.org/wiki/Thundering_herd_problem).
 
 ## The stateful start.
@@ -56,9 +56,10 @@ it more difficult to reason about program flow since you don't know
 for sure when it might be called.
 
 It doesn't allow you to restart a backoff process mid-try if you get a
-signal that you can retry from zero. This can be added by passing in a
-retry channel, but it complicates the simplest case and offers little
-flexibility when a retry needs to occur.
+signal that you should retry from zero. You can pass in a retry
+channel to support this, but it complicates the API for simpler uses
+and offers little flexibility in backoff logic when a retry needs to
+occur.
 
 It doesn't allow you to easily change behavior between fatal and
 retryable errors in `f()`. You could add a backoff package error
@@ -110,7 +111,7 @@ func jitter(millis int) int {
 }
 ```
 
-With typical use looking like this:
+Typical use looks like this:
 
 ```go
 func retryConn() {
@@ -141,8 +142,8 @@ call trace data.
 This has several advantages:
 
 The calling function has complete control over program flow. It can
-use time.Sleep() to backoff for simplicity, or it can use time.After()
-and select if other signals are in play.
+use `time.Sleep()` to backoff for simplicity, or it can use
+`time.After()` and `select` if other signals are in play.
 
 So if you have a "done" channel to signal that retries should stop:
 
