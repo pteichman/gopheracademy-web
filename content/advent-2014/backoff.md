@@ -145,7 +145,7 @@ The calling function has complete control over program flow. It can
 use `time.Sleep()` to backoff for simplicity, or it can use
 `time.After()` and `select` if other signals are in play.
 
-So if you have a "done" channel to signal that retries should stop:
+e.g. you have a `done` channel to signaling that retries should stop:
 
 ```go
 func retryConn(done <-chan struct{}) {
@@ -195,21 +195,21 @@ allowing safe concurrent use and no need for allocations when many
 processes are backing off at the same time.
 
 All state, including the connection itself and the attempt counter, is
-held entirely in the retryConn function. You can reason about the
+held entirely in the `retryConn` function. You can reason about the
 state of the connection without looking anywhere else. The attempt
 counter is simply an integer, not a property hidden behind an opaque
 struct. It has a zero value that makes sense.
 
 If a fatal error occurs when dealing with `conn`, you can easily
-return that from retryConn without disrupting another process. You can
+return it from `retryConn` without disrupting another process. You can
 decide whether an error is fatal without involving the backoff policy.
 
-At ~30 lines of code, it can be easily copied into any project without
-introducing an external dependency.
+Since it's about 30 lines of code, it can be easily copied into any
+project without introducing an external dependency.
 
-Most important, and this is a thing I love about programming in Go, is
-that the function *looks like what it does*. There's no hidden state
-or magic behavior. The normal function flow lives at a reasonable two
+Most important is that the function *looks like what it does*. This is
+a thing I love about programming in Go. There's no hidden state or
+magic behavior. The normal function flow lives at a reasonable two
 levels of indentation.
 
 I've always found this array-based backoff sufficient, but if you want
